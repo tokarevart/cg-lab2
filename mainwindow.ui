@@ -80,19 +80,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="gen_builtin_wid_btn">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Generate built-in on widget</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="gen_builtin_btn">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -101,7 +88,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Generate built-in on image</string>
+             <string>Generate built-in</string>
             </property>
            </widget>
           </item>
@@ -114,7 +101,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Generate on image</string>
+             <string>Generate</string>
             </property>
            </widget>
           </item>
@@ -136,19 +123,6 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="thous_gen_builtin_wid_btn">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Generate built-in on widget</string>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QPushButton" name="thous_gen_builtin_btn">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -157,7 +131,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Generate built-in on image</string>
+             <string>Generate built-in</string>
             </property>
            </widget>
           </item>
@@ -170,7 +144,7 @@
              </sizepolicy>
             </property>
             <property name="text">
-             <string>Generate on image</string>
+             <string>Generate</string>
             </property>
            </widget>
           </item>
@@ -188,12 +162,32 @@
      </layout>
     </item>
     <item>
+     <widget class="QLabel" name="image_label">
+      <property name="text">
+       <string>Image</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QGraphicsView" name="graphicsView">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="gl_label">
+      <property name="text">
+       <string>OpenGL</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -223,23 +217,16 @@
        </widget>
       </item>
       <item>
-       <widget class="QLabel" name="builtin_wid_time_label">
-        <property name="text">
-         <string>Built-in on widget time</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QLabel" name="builtin_time_label">
         <property name="text">
-         <string>Built-in on image time</string>
+         <string>Built-in time</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QLabel" name="time_label">
         <property name="text">
-         <string>On image time</string>
+         <string>Time</string>
         </property>
        </widget>
       </item>

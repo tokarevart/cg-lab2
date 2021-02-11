@@ -106,18 +106,16 @@ void MainWindow::on_gen_btn_clicked() {
         edges.push_back(QLine(poly[i - 1], poly[i]));
     }
 
-    QRect brect = poly.boundingRect();
-    int ax, ay, w, h;
-    brect.getRect(&ax, &ay, &w, &h);
     QRgb *bits = reinterpret_cast<QRgb *>(image.bits());
-    for (int y = ay; y < ay + h; ++y) {
+    QRect brect = poly.boundingRect();
+    for (int y = brect.top(); y < brect.bottom(); ++y) {
         auto xinters = polygon_horiz_intersections(edges, y);
         for (int i = 0; i < xinters.size(); i += 2) {
             int xbeg = xinters[i] + 0.5;
             int xend = xinters[i + 1] + 1.5;
+            int start = y * image.width();
             for (int x = xbeg; x < xend; ++x) {
-                bits[y * image.width() + x] =
-                    rng.generate(); // or QColor(Qt::red).rgb()
+                bits[start + x] = rng.generate(); // or QColor(Qt::red).rgb()
             }
         }
     }
@@ -169,17 +167,16 @@ void MainWindow::on_thous_gen_btn_clicked() {
             edges.push_back(QLine(poly[i - 1], poly[i]));
         }
 
-        QRect brect = poly.boundingRect();
-        int ax, ay, w, h;
-        brect.getRect(&ax, &ay, &w, &h);
         QRgb *bits = reinterpret_cast<QRgb *>(image.bits());
-        for (int y = ay; y < ay + h; ++y) {
+        QRect brect = poly.boundingRect();
+        for (int y = brect.top(); y < brect.bottom(); ++y) {
             auto xinters = polygon_horiz_intersections(edges, y);
             for (int i = 0; i < xinters.size(); i += 2) {
                 int xbeg = xinters[i] + 0.5;
                 int xend = xinters[i + 1] + 1.5;
+                int start = y * image.width();
                 for (int x = xbeg; x < xend; ++x) {
-                    bits[y * image.width() + x] =
+                    bits[start + x] =
                         rng.generate(); // or QColor(Qt::red).rgb()
                 }
             }
@@ -215,40 +212,6 @@ void MainWindow::on_thous_gen_builtin_btn_clicked() {
     painter.end();
     scene->addPixmap(QPixmap::fromImage(image))->setPos(0, 0);
     auto label = ui->builtin_time_label;
-    label->setText(label->text().split(':')[0] + ": " +
-                   QString::number(t.elapsed()) + " ms");
-}
-
-void MainWindow::on_gen_builtin_wid_btn_clicked() {
-    QElapsedTimer t;
-    t.start();
-    auto poly = random_polygon(QRect({0, 0}, ui->graphicsView->size()),
-                               ui->n_sbox->value());
-    QColor color = QColor::fromRgb(rng.generate());
-    QBrush brush(color);
-    QPen pen(Qt::black);
-    scene->clear();
-    scene->setSceneRect(ui->graphicsView->rect());
-    scene->addPolygon(poly, pen, brush)->setPos(0, 0);
-    auto label = ui->builtin_wid_time_label;
-    label->setText(label->text().split(':')[0] + ": " +
-                   QString::number(t.elapsed()) + " ms");
-}
-
-void MainWindow::on_thous_gen_builtin_wid_btn_clicked() {
-    QElapsedTimer t;
-    t.start();
-    QPen pen(Qt::black);
-    scene->setSceneRect(ui->graphicsView->rect());
-    scene->clear();
-    for (int i = 0; i < 1000; ++i) {
-        auto poly = random_polygon(QRect({0, 0}, ui->graphicsView->size()),
-                                   ui->n_sbox->value());
-        QColor color = QColor::fromRgb(rng.generate());
-        QBrush brush(color);
-        scene->addPolygon(poly, pen, brush)->setPos(0, 0);
-    }
-    auto label = ui->builtin_wid_time_label;
     label->setText(label->text().split(':')[0] + ": " +
                    QString::number(t.elapsed()) + " ms");
 }

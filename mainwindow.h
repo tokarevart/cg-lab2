@@ -27,10 +27,6 @@ class MainWindow : public QMainWindow {
 
     void on_thous_gen_btn_clicked();
 
-    void on_gen_builtin_wid_btn_clicked();
-
-    void on_thous_gen_builtin_wid_btn_clicked();
-
     void on_gen_gl_btn_clicked();
 
     void on_thous_gen_gl_btn_clicked();
