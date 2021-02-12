@@ -5,6 +5,7 @@
 #include <QGraphicsProxyWidget>
 #include <QPainter>
 #include <QVector2D>
+#include <algorithm>
 
 #include "ui_mainwindow.h"
 
@@ -72,10 +73,35 @@ QList<double> polygon_horiz_intersections(const QList<QLine> &edges, int y) {
                 res.push_back(ointer.value().x());
             }
         }
-        prev_edge = edges[i];
+        prev_edge = cur_edge;
     }
     std::sort(res.begin(), res.end());
     return res;
+}
+
+void draw_polygon(QImage &image, const QPolygon &poly,
+                  std::function<QRgb()> rgb) {
+    QList<QLine> edges;
+    edges.reserve(poly.size());
+    edges.push_back(QLine(poly.last(), poly.first()));
+    for (int i = 1; i < poly.size(); ++i) {
+        edges.push_back(QLine(poly[i - 1], poly[i]));
+    }
+
+    QRgb *bits = reinterpret_cast<QRgb *>(image.bits());
+    QRect brect = poly.boundingRect();
+    for (int y = brect.top(); y < brect.bottom(); ++y) {
+        auto xinters = polygon_horiz_intersections(edges, y);
+        for (int i = 0; i < xinters.size(); i += 2) {
+            int xbeg = std::max(static_cast<int>(xinters[i] + 0.5), 0);
+            int xend =
+                std::min(static_cast<int>(xinters[i + 1] + 1.5), image.width());
+            int start = y * image.width();
+            for (int x = xbeg; x < xend; ++x) {
+                bits[start + x] = rgb();
+            }
+        }
+    }
 }
 
 MainWindow::MainWindow(QWidget *parent)
@@ -99,26 +125,7 @@ void MainWindow::on_gen_btn_clicked() {
 
     auto poly = random_polygon(QRect({0, 0}, ui->graphicsView->size()),
                                ui->n_sbox->value());
-    QList<QLine> edges;
-    edges.reserve(3);
-    edges.push_back(QLine(poly.last(), poly.first()));
-    for (int i = 1; i < poly.size(); ++i) {
-        edges.push_back(QLine(poly[i - 1], poly[i]));
-    }
-
-    QRgb *bits = reinterpret_cast<QRgb *>(image.bits());
-    QRect brect = poly.boundingRect();
-    for (int y = brect.top(); y < brect.bottom(); ++y) {
-        auto xinters = polygon_horiz_intersections(edges, y);
-        for (int i = 0; i < xinters.size(); i += 2) {
-            int xbeg = xinters[i] + 0.5;
-            int xend = xinters[i + 1] + 1.5;
-            int start = y * image.width();
-            for (int x = xbeg; x < xend; ++x) {
-                bits[start + x] = rng.generate(); // or QColor(Qt::red).rgb()
-            }
-        }
-    }
+    draw_polygon(image, poly, [this]() { return rng.generate(); });
     scene->clear();
     scene->setSceneRect(ui->graphicsView->rect());
     scene->addPixmap(QPixmap::fromImage(image))->setPos(0, 0);
@@ -160,27 +167,7 @@ void MainWindow::on_thous_gen_btn_clicked() {
     for (int poly_i = 0; poly_i < 1000; ++poly_i) {
         auto poly = random_polygon(QRect({0, 0}, ui->graphicsView->size()),
                                    ui->n_sbox->value());
-        QList<QLine> edges;
-        edges.reserve(3);
-        edges.push_back(QLine(poly.last(), poly.first()));
-        for (int i = 1; i < poly.size(); ++i) {
-            edges.push_back(QLine(poly[i - 1], poly[i]));
-        }
-
-        QRgb *bits = reinterpret_cast<QRgb *>(image.bits());
-        QRect brect = poly.boundingRect();
-        for (int y = brect.top(); y < brect.bottom(); ++y) {
-            auto xinters = polygon_horiz_intersections(edges, y);
-            for (int i = 0; i < xinters.size(); i += 2) {
-                int xbeg = xinters[i] + 0.5;
-                int xend = xinters[i + 1] + 1.5;
-                int start = y * image.width();
-                for (int x = xbeg; x < xend; ++x) {
-                    bits[start + x] =
-                        rng.generate(); // or QColor(Qt::red).rgb()
-                }
-            }
-        }
+        draw_polygon(image, poly, [this]() { return rng.generate(); });
     }
 
     scene->clear();
