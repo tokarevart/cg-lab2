@@ -23,97 +23,105 @@ QPolygon MainWindow::random_polygon(QRect rect, int n) {
     return polygon;
 }
 
-int det(QPoint col0, QPoint col1) {
-    return col0.x() * col1.y() - col0.y() * col1.x();
-}
-
-std::optional<QPointF> segm_line_intersection(QLine s, QLine l) {
-    QPoint p0 = s.p1();
-    QPoint p1 = s.p2();
-    QPoint q0 = l.p1();
-    QPoint q1 = l.p2();
-    QPoint p1_p0 = p1 - p0;
-    QPoint q1_q0 = q1 - q0;
-    int d = det(q1_q0, -p1_p0);
-    if (d == 0) {
-        return std::nullopt;
-    }
-
-    QPoint p0_q0 = p0 - q0;
-    int d1 = det(q1_q0, p0_q0);
-    if (d * d1 < 0 || std::abs(d1) > std::abs(d)) {
-        return std::nullopt;
-    }
-
-    double t = static_cast<double>(d1) / d;
-    return QPointF(p0) + t * QPointF(p1_p0);
-}
-
-QLine horiz_line(int y) {
-    return {QPoint(0, y), QPoint(1, y)};
-}
-
-std::optional<QPointF> segm_horizline_intersection(QLine s, int y) {
-    int p0y = s.p1().y();
-    int p1y = s.p2().y();
+std::optional<QPointF> segm_horizline_intersection(QPoint p0, QPoint p1, int y) {
+    int p0y = p0.y();
+    int p1y = p1.y();
     if (p0y == p1y) {
         return std::nullopt;
     }
-    double t = static_cast<double>(y - p0y) / (p1y - p0y);
-    if (t < 0.0 || t > 1) {
+    int y_p0y = y - p0y;
+    int p1y_p0y = p1y - p0y;
+    if (y_p0y == 0) {
+        return QPointF(p0);
+    } else if (y_p0y == p1y_p0y) {
+        return QPointF(p1);
+    }
+    double t = static_cast<double>(y_p0y) / p1y_p0y;
+    if (t < 0.0 || t > 1.0) {
         return std::nullopt;
     } else {
-        return QPointF(s.p1()) + t * QPointF(s.p2() - s.p1());
+        return QPointF(p0) + t * QPointF(p1 - p0);
     }
 }
 
-QList<double> polygon_horiz_intersections(const QList<QLine> &edges, int y) {
-//    auto horizlile = horiz_line(y);
+QList<double> polygon_horiz_intersections(const QPolygon& poly, int y) {
     QList<double> res;
-    res.reserve(2);
-    auto prev_edge = edges.last();
-    for (int i = 0; i < edges.size(); ++i) {
-        auto cur_edge = edges[i];
-//        auto ointer = segm_line_intersection(cur_edge, horizlile);
-        auto ointer = segm_horizline_intersection(cur_edge, y);
+    res.reserve(poly.size());
+    auto prev = poly.last();
+    for (int i = 0; i < poly.size(); ++i) {
+        auto cur = poly[i];
+        auto ointer = segm_horizline_intersection(prev, cur, y);
         if (ointer.has_value()) {
-            if (cur_edge.p1().y() == y) {
-                auto p0 = prev_edge.p1();
-                auto p1 = cur_edge.p1();
-                auto p2 = cur_edge.p2();
-                if ((p1.y() - p0.y()) * (p2.y() - p1.y()) <= 0) {
+            if (cur.y() == y) {
+                auto next = poly[0];
+                if (i < poly.size() - 1) {
+                    next = poly[i + 1];
+                }
+                if ((cur.y() - prev.y()) * (next.y() - cur.y()) < 0) {
                     res.push_back(ointer.value().x());
                 }
             } else {
                 res.push_back(ointer.value().x());
             }
         }
-        prev_edge = cur_edge;
+        prev = cur;
     }
     std::sort(res.begin(), res.end());
     return res;
 }
 
-void draw_polygon(QImage &image, const QPolygon &poly,
-                  std::function<QRgb()> rgb) {
-    QList<QLine> edges;
-    edges.reserve(poly.size());
-    edges.push_back(QLine(poly.last(), poly.first()));
-    for (int i = 1; i < poly.size(); ++i) {
-        edges.push_back(QLine(poly[i - 1], poly[i]));
+std::array<double, 2> triangle_horiz_intersections(const QPolygon& poly, int y) {
+    std::array<double, 2> res;
+    std::size_t res_i = 0;
+    auto prev = poly.last();
+    for (int i = 0; i < 3; ++i) {
+        auto cur = poly[i];
+        auto ointer = segm_horizline_intersection(prev, cur, y);
+        if (ointer.has_value()) {
+            if (cur.y() == y) {
+                auto next = poly[0];
+                if (i < poly.size() - 1) {
+                    next = poly[i + 1];
+                }
+                if ((cur.y() - prev.y()) * (next.y() - cur.y()) < 0) {
+                    res[res_i++] = ointer.value().x();
+                }
+            } else {
+                res[res_i++] = ointer.value().x();
+            }
+        }
+        prev = cur;
     }
+    if (res[0] > res[1]) {
+        std::swap(res[0], res[1]);
+    }
+    return res;
+}
 
-    QRgb *bits = reinterpret_cast<QRgb *>(image.bits());
+void draw_polygon(QImage& image, const QPolygon& poly,
+                  std::function<QRgb()> rgb) {
+    QRgb color = rgb();
+    QRgb* bits = reinterpret_cast<QRgb*>(image.bits());
     QRect brect = poly.boundingRect();
+    int width = image.width();
     for (int y = brect.top(); y < brect.bottom(); ++y) {
-        auto xinters = polygon_horiz_intersections(edges, y);
-        for (int i = 0; i < xinters.size(); i += 2) {
-            int xbeg = std::max(static_cast<int>(xinters[i] + 0.5), 0);
-            int xend =
-                std::min(static_cast<int>(xinters[i + 1] + 1.5), image.width());
-            int start = y * image.width();
+        if (poly.size() == 3) {
+            auto xinters = triangle_horiz_intersections(poly, y);
+            int xbeg = std::max(static_cast<int>(xinters[0]), 0);
+            int xend = std::min(static_cast<int>(xinters[1]) + 1, width);
+            QRgb* cur_bits = bits + y * width;
             for (int x = xbeg; x < xend; ++x) {
-                bits[start + x] = rgb();
+                cur_bits[x] = color;
+            }
+        } else {
+            auto xinters = polygon_horiz_intersections(poly, y);
+            for (int i = 0; i < xinters.size(); i += 2) {
+                int xbeg = std::max(static_cast<int>(xinters[i]), 0);
+                int xend = std::min(static_cast<int>(xinters[i + 1]) + 1, width);
+                QRgb* cur_bits = bits + y * width;
+                for (int x = xbeg; x < xend; ++x) {
+                    cur_bits[x] = color;
+                }
             }
         }
     }
